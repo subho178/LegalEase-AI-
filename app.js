@@ -1010,6 +1010,20 @@ function updateConsultationPrep(doc) {
     redFlagsList.appendChild(fragment);
 }
 
+/**
+ * Switch to Tab 6 and display full Lawyer Prep Briefing Document comfortably
+ */
+function showLawyerPrep() {
+    const doc = appStateStore.get('currentDoc') || LEGAL_SAMPLES.employment;
+    updateConsultationPrep(doc);
+    switchTab('consultation', document.getElementById('btn-tab-consultation'));
+    const sheet = domCache.consultationSheet || document.getElementById('consultationSheet');
+    if (sheet) {
+        sheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    showToast('Loaded Lawyer Consultation Briefing Document');
+}
+
 // Export Functions (PDF, Markdown, JSON)
 function exportConsultationPDF() {
     switchTab('consultation', document.getElementById('btn-tab-consultation'));

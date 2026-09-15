@@ -922,11 +922,14 @@ body {
 .consultation-sheet {
     background: #FFFFFF;
     color: #111827;
-    padding: 2.5rem;
+    padding: 2.2rem;
     border-radius: var(--radius-md);
     font-family: 'Outfit', sans-serif;
     line-height: 1.6;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid #CBD5E1;
+    overflow-y: auto;
+    max-height: calc(100vh - 260px);
 }
 
 .sheet-header {
