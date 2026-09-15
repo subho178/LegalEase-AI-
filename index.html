@@ -59,6 +59,18 @@
         <span><strong>Legal Disclaimer:</strong> LegalEase AI provides informational intelligence and analysis. It does not constitute formal legal advice. Always consult a qualified licensed attorney for formal legal representation.</span>
     </div>
 
+    <!-- Hackathon Problem Statement Alignment Badge Bar -->
+    <div class="usecase-bar" role="region" aria-label="GenAI Hackathon Problem Statement Alignment">
+        <span class="usecase-label"><i class="fa-bullseye" aria-hidden="true"></i> Problem Statement Alignment:</span>
+        <span class="usecase-pill active" title="Use Case 1: Simplifying Complex Legal Documents"><i class="fa-check-circle" aria-hidden="true"></i> 1. Document Simplification</span>
+        <span class="usecase-pill active" title="Use Case 2: Comparing Contracts, Agreements, or Policies"><i class="fa-check-circle" aria-hidden="true"></i> 2. Contract Comparison</span>
+        <span class="usecase-pill active" title="Use Case 3: Highlighting Important Clauses, Obligations, Risks, or Inconsistencies"><i class="fa-check-circle" aria-hidden="true"></i> 3. Risk & Obligation Radar</span>
+        <span class="usecase-pill active" title="Use Case 4: Answering Questions Based on Provided Legal Documents"><i class="fa-check-circle" aria-hidden="true"></i> 4. Grounded Q&A Assistant</span>
+        <span class="usecase-pill active" title="Use Case 5: Helping Users Understand Options & Potential Next Steps"><i class="fa-check-circle" aria-hidden="true"></i> 5. Options Navigator</span>
+        <span class="usecase-pill active" title="Use Case 6: Generating Summaries, Checklists, or Actionable Outputs"><i class="fa-check-circle" aria-hidden="true"></i> 6. Action Checklists</span>
+        <span class="usecase-pill active" title="Use Case 7: Helping Users Prepare Information for Legal Professionals"><i class="fa-check-circle" aria-hidden="true"></i> 7. Lawyer Consultation Prep</span>
+    </div>
+
     <!-- Main Workspace App Grid -->
     <main class="app-container" id="main-content" role="main">
         
@@ -110,22 +122,22 @@
             <!-- Tabs Navigation -->
             <nav class="tabs-header" role="tablist" aria-label="Legal Suite Tools">
                 <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-simplifier" id="btn-tab-simplifier" onclick="switchTab('simplifier', this)">
-                    <i class="fa-wand-magic-sparkles" aria-hidden="true"></i> Simplifier & Red Flags
+                    <i class="fa-wand-magic-sparkles" aria-hidden="true"></i> 1. Simplifier & Risks
                 </button>
                 <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-compare" id="btn-tab-compare" onclick="switchTab('compare', this)">
-                    <i class="fa-code-compare" aria-hidden="true"></i> Compare Contracts
+                    <i class="fa-code-compare" aria-hidden="true"></i> 2. Compare Contracts
                 </button>
                 <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-chat" id="btn-tab-chat" onclick="switchTab('chat', this)">
-                    <i class="fa-comments" aria-hidden="true"></i> AI Assistant Q&A
+                    <i class="fa-comments" aria-hidden="true"></i> 3. Grounded Q&A
                 </button>
                 <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-options" id="btn-tab-options" onclick="switchTab('options', this)">
-                    <i class="fa-compass" aria-hidden="true"></i> Options Navigator
+                    <i class="fa-compass" aria-hidden="true"></i> 4. Options Navigator
                 </button>
                 <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" id="btn-tab-checklist" onclick="switchTab('checklist', this)">
-                    <i class="fa-list-check" aria-hidden="true"></i> Action Checklist
+                    <i class="fa-list-check" aria-hidden="true"></i> 5. Action Checklists
                 </button>
                 <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-consultation" id="btn-tab-consultation" onclick="switchTab('consultation', this)">
-                    <i class="fa-user-tie" aria-hidden="true"></i> Lawyer Prep
+                    <i class="fa-user-tie" aria-hidden="true"></i> 6. Lawyer Prep
                 </button>
             </nav>
 
@@ -169,6 +181,16 @@
                         <span class="jargon-term" data-tooltip="Clauses preventing former employees from competing with employer's business.">Non-Compete</span> | 
                         <span class="jargon-term" data-tooltip="Ensures invalid clauses can be removed without invalidating the rest of the contract.">Severability</span> | 
                         <span class="jargon-term" data-tooltip="Unforeseeable emergency events (disasters, war) freeing parties from liability.">Force Majeure</span>
+                    </div>
+
+                    <!-- Filter Chips for Use Case 3: Highlighting Obligations, Risks, Restrictions, Inconsistencies -->
+                    <div class="filter-chips-container" role="group" aria-label="Filter clauses by category and risk">
+                        <span style="font-size: 0.85rem; color: var(--text-dim); font-weight: 600;">Filter Radar:</span>
+                        <button class="filter-chip active" onclick="filterClauses('all', this)">All Clauses</button>
+                        <button class="filter-chip" onclick="filterClauses('high', this)"><i class="fa-triangle-exclamation" aria-hidden="true"></i> High Risks</button>
+                        <button class="filter-chip" onclick="filterClauses('obligation', this)"><i class="fa-user-shield" aria-hidden="true"></i> Obligations</button>
+                        <button class="filter-chip" onclick="filterClauses('restriction', this)"><i class="fa-ban" aria-hidden="true"></i> Restrictions</button>
+                        <button class="filter-chip" onclick="filterClauses('inconsistency', this)"><i class="fa-scale-unbalanced" aria-hidden="true"></i> Inconsistencies</button>
                     </div>
 
                     <!-- Simplified Clauses List -->

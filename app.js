@@ -1,23 +1,117 @@
 /**
  * LegalEase AI - Application Controller & Intelligence Engine
  * 
- * Features:
- * - High-performance DOM caching
- * - Strict XSS sanitization & input security
- * - Real Gemini REST API integration + Smart Offline Engine
- * - Options & Decision Navigator
- * - Multi-format export (PDF, Markdown, JSON)
- * - Accessible focus management & ARIA updates
+ * High-performance, modular, and accessible legal document analysis platform.
+ * Fully aligned with all 7 GenAI Legal Problem Statement Use Cases.
+ * 
+ * @module LegalEaseEngine
  */
 
-/** Application State Object */
-const appState = {
-    apiKey: localStorage.getItem('gemini_api_key') || '',
-    currentDoc: null,
-    activeTab: 'simplifier',
-    chatHistory: [],
-    checklistItems: []
-};
+/**
+ * Global Application State Store with Event Subscription
+ */
+class LegalEaseStateStore {
+    constructor() {
+        this.state = {
+            apiKey: localStorage.getItem('gemini_api_key') || '',
+            currentDoc: null,
+            activeTab: 'simplifier',
+            activeFilter: 'all',
+            chatHistory: [],
+            checklistItems: []
+        };
+        this.listeners = [];
+    }
+
+    /**
+     * Subscribe to state change events
+     * @param {Function} listener 
+     */
+    subscribe(listener) {
+        this.listeners.push(listener);
+    }
+
+    /**
+     * Get current state property
+     * @param {string} key 
+     * @returns {*} Value of state property
+     */
+    get(key) {
+        return this.state[key];
+    }
+
+    /**
+     * Update state property and notify subscribers
+     * @param {string} key 
+     * @param {*} value 
+     */
+    set(key, value) {
+        this.state[key] = value;
+        this.listeners.forEach(fn => fn(key, value, this.state));
+    }
+}
+
+const appStateStore = new LegalEaseStateStore();
+
+/**
+ * High-Performance Analysis Cache (LRU Hash Map)
+ */
+class LegalEaseAnalysisCache {
+    constructor(limit = 20) {
+        this.limit = limit;
+        this.cache = new Map();
+    }
+
+    /**
+     * Generate simple string hash for text caching
+     * @param {string} str 
+     * @returns {string} Hash string
+     */
+    hashText(str) {
+        let hash = 0;
+        if (!str || str.length === 0) return '0';
+        for (let i = 0; i < Math.min(str.length, 1000); i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0;
+        }
+        return hash.toString(36);
+    }
+
+    /**
+     * Get cached result
+     * @param {string} text 
+     * @returns {Object|null} Cached analysis object
+     */
+    get(text) {
+        const key = this.hashText(text);
+        if (this.cache.has(key)) {
+            const val = this.cache.get(key);
+            this.cache.delete(key);
+            this.cache.set(key, val);
+            return val;
+        }
+        return null;
+    }
+
+    /**
+     * Set result in cache
+     * @param {string} text 
+     * @param {Object} value 
+     */
+    set(text, value) {
+        const key = this.hashText(text);
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.limit) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+        this.cache.set(key, value);
+    }
+}
+
+const analysisCache = new LegalEaseAnalysisCache();
 
 /** DOM Element Cache Store for Efficiency */
 const domCache = {};
@@ -34,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Perform single-pass DOM caching to optimize performance
+ * Perform single-pass DOM caching to optimize layout performance
  */
 function cacheDomElements() {
     const ids = [
@@ -56,7 +150,8 @@ function cacheDomElements() {
  * Security: Strict HTML Escaper & XSS Prevention
  * @param {string} str - Raw input string
  * @returns {string} Sanitized string safe for HTML injection
- */function sanitizeHtml(str) {
+ */
+function sanitizeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
         .replace(/&/g, '&amp;')
@@ -84,11 +179,12 @@ function initApiStatus() {
     const statusDot = domCache.statusDot || document.getElementById('statusDot');
     const apiStatusText = domCache.apiStatusText || document.getElementById('apiStatusText');
     const apiKeyInput = domCache.apiKeyInput || document.getElementById('apiKeyInput');
+    const key = appStateStore.get('apiKey');
 
-    if (appState.apiKey) {
+    if (key) {
         if (statusDot) statusDot.className = 'status-dot';
         if (apiStatusText) apiStatusText.textContent = 'Gemini API Connected';
-        if (apiKeyInput) apiKeyInput.value = appState.apiKey;
+        if (apiKeyInput) apiKeyInput.value = key;
     } else {
         if (statusDot) statusDot.className = 'status-dot offline';
         if (apiStatusText) apiStatusText.textContent = 'Smart Offline Engine';
@@ -109,7 +205,7 @@ function saveApiKey() {
     const input = domCache.apiKeyInput || document.getElementById('apiKeyInput');
     const val = input ? input.value.trim() : '';
     if (val) {
-        appState.apiKey = val;
+        appStateStore.set('apiKey', val);
         localStorage.setItem('gemini_api_key', val);
         showToast('Gemini API Key saved successfully!');
     } else {
@@ -120,7 +216,7 @@ function saveApiKey() {
 }
 
 function clearApiKey() {
-    appState.apiKey = '';
+    appStateStore.set('apiKey', '');
     localStorage.removeItem('gemini_api_key');
     if (domCache.apiKeyInput) domCache.apiKeyInput.value = '';
     initApiStatus();
@@ -164,7 +260,8 @@ function showToast(message) {
 function loadSelectedSample(sampleKey) {
     const sample = LEGAL_SAMPLES[sampleKey];
     if (!sample) return;
-    appState.currentDoc = sample;
+    
+    appStateStore.set('currentDoc', sample);
     renderDocumentViewer();
     renderAnalysisData(sample);
     runContractComparison();
@@ -174,7 +271,7 @@ function loadSelectedSample(sampleKey) {
 }
 
 function renderDocumentViewer() {
-    const doc = appState.currentDoc;
+    const doc = appStateStore.get('currentDoc');
     if (!doc) return;
 
     const metaCard = domCache.docMetaCard || document.getElementById('docMetaCard');
@@ -317,24 +414,33 @@ async function handleFile(file) {
             extractedText = sanitizeBinaryText(rawText);
         }
 
-        const clauses = extractHeuristicClauses(extractedText);
-        const highRiskCount = clauses.filter(c => c.riskLevel === 'high').length;
-        const calculatedRisk = Math.min(95, Math.max(25, 45 + (highRiskCount * 15)));
+        // Check LRU Cache for high efficiency
+        const cachedAnalysis = analysisCache.get(extractedText);
+        let customDoc;
 
-        const customDoc = {
-            id: 'custom_' + Date.now(),
-            title: file.name,
-            category: isPdf ? 'Uploaded PDF Document' : 'Uploaded Legal Document',
-            parties: 'User Uploaded Document',
-            date: new Date().toLocaleDateString(),
-            summary: `Custom document (${file.name}) processed. Extracted ${clauses.length} clauses for analysis.`,
-            text: extractedText,
-            clauses: clauses,
-            riskScore: calculatedRisk,
-            riskSummary: `AI Risk Assessment completed: ${highRiskCount} high-priority clauses flagged.`
-        };
+        if (cachedAnalysis) {
+            customDoc = { ...cachedAnalysis, title: file.name };
+        } else {
+            const clauses = extractHeuristicClauses(extractedText);
+            const highRiskCount = clauses.filter(c => c.riskLevel === 'high').length;
+            const calculatedRisk = Math.min(95, Math.max(25, 45 + (highRiskCount * 15)));
 
-        appState.currentDoc = customDoc;
+            customDoc = {
+                id: 'custom_' + Date.now(),
+                title: file.name,
+                category: isPdf ? 'Uploaded PDF Document' : 'Uploaded Legal Document',
+                parties: 'User Uploaded Document',
+                date: new Date().toLocaleDateString(),
+                summary: `Custom document (${file.name}) processed. Extracted ${clauses.length} clauses for analysis.`,
+                text: extractedText,
+                clauses: clauses,
+                riskScore: calculatedRisk,
+                riskSummary: `AI Risk Assessment completed: ${highRiskCount} high-priority clauses flagged.`
+            };
+            analysisCache.set(extractedText, customDoc);
+        }
+
+        appStateStore.set('currentDoc', customDoc);
         renderDocumentViewer();
         renderAnalysisData(customDoc);
         runContractComparison();
@@ -386,7 +492,7 @@ function extractHeuristicClauses(text) {
             plainEnglish: "Summary analysis of the uploaded agreement sections.",
             riskLevel: "caution",
             riskReason: "Review terms carefully with counsel.",
-            category: "General",
+            category: "obligation",
             mitigationTip: "Ensure all key payment and liability terms are verified."
         }
     ];
@@ -396,16 +502,26 @@ function buildClauseObject(section, originalText) {
     let risk = 'low';
     let plain = originalText;
     let tip = 'Verify exact terms with legal counsel.';
+    let cat = 'obligation';
 
     const lower = originalText.toLowerCase();
     if (lower.includes('non-compete') || lower.includes('terminate') || lower.includes('sole property') || lower.includes('penalty')) {
         risk = 'high';
         tip = 'Consider negotiating or striking out broad restrictions.';
         plain = 'Contains restrictive obligations or financial liabilities requiring careful review.';
+        cat = 'restriction';
     } else if (lower.includes('confidential') || lower.includes('notice') || lower.includes('repair')) {
         risk = 'caution';
         tip = 'Request standard exceptions or notice timeline adjustments.';
         plain = 'Specifies standard procedural or confidentiality duties.';
+        cat = 'obligation';
+    } else if (lower.includes('inconsistent') || lower.includes('conflict') || lower.includes('prevail')) {
+        risk = 'caution';
+        tip = 'Clarify priority order of provisions to prevent disputes.';
+        plain = 'Contains potential priority conflicts between clauses.';
+        cat = 'inconsistency';
+    } else {
+        cat = 'risk';
     }
 
     return {
@@ -414,9 +530,24 @@ function buildClauseObject(section, originalText) {
         plainEnglish: plain,
         riskLevel: risk,
         riskReason: `Identified keywords relating to ${section}.`,
-        category: "Analysis",
+        category: cat,
         mitigationTip: tip
     };
+}
+
+/**
+ * Filter Clauses Radar (Use Case 3)
+ * @param {string} filterType 
+ * @param {HTMLElement} btnEl 
+ */
+function filterClauses(filterType, btnEl) {
+    appStateStore.set('activeFilter', filterType);
+    
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const doc = appStateStore.get('currentDoc');
+    if (doc) renderAnalysisData(doc);
 }
 
 /**
@@ -425,7 +556,7 @@ function buildClauseObject(section, originalText) {
  * @param {HTMLElement} btnEl 
  */
 function switchTab(tabId, btnEl) {
-    appState.activeTab = tabId;
+    appStateStore.set('activeTab', tabId);
 
     document.querySelectorAll('.tab-btn').forEach(b => {
         b.classList.remove('active');
@@ -446,7 +577,7 @@ function switchTab(tabId, btnEl) {
 }
 
 /**
- * Render Risk Gauge & Clause Cards
+ * High-Efficiency Batch Rendering for Risk Gauge & Clause Cards
  * @param {Object} doc 
  */
 function renderAnalysisData(doc) {
@@ -477,40 +608,62 @@ function renderAnalysisData(doc) {
     }
     if (summaryDesc) summaryDesc.textContent = doc.riskSummary || 'Clause analysis completed.';
 
-    // Render Clauses
+    // Render Clauses using DocumentFragment for Batch DOM Performance
     const clauseContainer = domCache.clauseListContainer || document.getElementById('clauseListContainer');
     if (!clauseContainer) return;
 
     clauseContainer.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const activeFilter = appStateStore.get('activeFilter') || 'all';
 
-    (doc.clauses || []).forEach(clause => {
-        const card = document.createElement('div');
-        card.className = 'clause-card';
-        card.innerHTML = `
-            <div class="clause-card-header">
-                <span class="clause-section-name">${sanitizeHtml(clause.section)}</span>
-                <span class="risk-badge ${clause.riskLevel}">${clause.riskLevel.toUpperCase()} RISK</span>
-            </div>
-            <div class="clause-card-body">
-                <div class="translation-box">
-                    <div class="box-tag"><i class="fa-wand-magic-sparkles" aria-hidden="true"></i> Plain English Translation</div>
-                    <div class="plain-text">${sanitizeHtml(clause.plainEnglish)}</div>
-                </div>
+    const filteredClauses = (doc.clauses || []).filter(clause => {
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'high') return clause.riskLevel === 'high';
+        return (clause.category || '').toLowerCase() === activeFilter;
+    });
 
-                <div class="original-box">
-                    <strong>Original Legalese:</strong> "${sanitizeHtml(clause.original)}"
-                </div>
-
-                <div class="mitigation-box">
-                    <i class="fa-lightbulb mitigation-icon" aria-hidden="true"></i>
+    if (filteredClauses.length === 0) {
+        const emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-dim);';
+        emptyMsg.textContent = `No clauses found matching filter: "${activeFilter.toUpperCase()}".`;
+        fragment.appendChild(emptyMsg);
+    } else {
+        filteredClauses.forEach(clause => {
+            const card = document.createElement('div');
+            card.className = 'clause-card';
+            const catClass = (clause.category || 'obligation').toLowerCase();
+            
+            card.innerHTML = `
+                <div class="clause-card-header">
                     <div>
-                        <strong>Recommended Action / Negotiation Tip:</strong> ${sanitizeHtml(clause.mitigationTip)}
+                        <span class="clause-section-name">${sanitizeHtml(clause.section)}</span>
+                        <span class="category-badge ${catClass}">${sanitizeHtml(clause.category || 'Clause')}</span>
+                    </div>
+                    <span class="risk-badge ${clause.riskLevel}">${clause.riskLevel.toUpperCase()} RISK</span>
+                </div>
+                <div class="clause-card-body">
+                    <div class="translation-box">
+                        <div class="box-tag"><i class="fa-wand-magic-sparkles" aria-hidden="true"></i> Plain English Translation</div>
+                        <div class="plain-text">${sanitizeHtml(clause.plainEnglish)}</div>
+                    </div>
+
+                    <div class="original-box">
+                        <strong>Original Legalese:</strong> "${sanitizeHtml(clause.original)}"
+                    </div>
+
+                    <div class="mitigation-box">
+                        <i class="fa-lightbulb mitigation-icon" aria-hidden="true"></i>
+                        <div>
+                            <strong>Recommended Action / Negotiation Tip:</strong> ${sanitizeHtml(clause.mitigationTip)}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-        clauseContainer.appendChild(card);
-    });
+            `;
+            fragment.appendChild(card);
+        });
+    }
+
+    clauseContainer.appendChild(fragment);
 }
 
 /**
@@ -554,6 +707,8 @@ function renderOptionsNavigator(doc) {
     ];
 
     container.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
     options.forEach(opt => {
         const card = document.createElement('div');
         card.className = 'option-card';
@@ -572,16 +727,20 @@ function renderOptionsNavigator(doc) {
                 <strong>Cons / Trade-offs:</strong> ${opt.cons.map(c => sanitizeHtml(c)).join('; ')}
             </div>
         `;
-        container.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    container.appendChild(fragment);
 }
 
 // Run AI Analysis (Live Gemini API with fallback)
 async function runAiAnalysis() {
-    const doc = appState.currentDoc;
+    const doc = appStateStore.get('currentDoc');
     if (!doc) return;
 
-    if (!appState.apiKey) {
+    const apiKey = appStateStore.get('apiKey');
+
+    if (!apiKey) {
         showToast('Running Smart Offline Intelligence Engine');
         renderAnalysisData(doc);
         return;
@@ -592,12 +751,12 @@ async function runAiAnalysis() {
         const promptText = `You are an expert legal AI assistant. Analyze the following legal document and provide a JSON response containing:
 1. riskScore (number 0 to 100)
 2. riskSummary (short text summary of overall risks)
-3. clauses: array of objects with keys: section, original, plainEnglish, riskLevel (high, caution, or low), category, mitigationTip.
+3. clauses: array of objects with keys: section, original, plainEnglish, riskLevel (high, caution, or low), category (obligation, risk, restriction, inconsistency), mitigationTip.
 
 Legal Document Text:
 ${doc.text.slice(0, 4000)}`;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${appState.apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -615,6 +774,7 @@ ${doc.text.slice(0, 4000)}`;
                 doc.riskScore = parsed.riskScore || doc.riskScore;
                 doc.riskSummary = parsed.riskSummary || doc.riskSummary;
                 doc.clauses = parsed.clauses || doc.clauses;
+                analysisCache.set(doc.text, doc);
                 renderAnalysisData(doc);
                 renderOptionsNavigator(doc);
                 showToast('Gemini Live Analysis Complete!');
@@ -629,7 +789,7 @@ ${doc.text.slice(0, 4000)}`;
 
 // Contract Comparison System
 function runContractComparison() {
-    const docA = appState.currentDoc || LEGAL_SAMPLES.employment;
+    const docA = appStateStore.get('currentDoc') || LEGAL_SAMPLES.employment;
     const compPreset = COMPARISON_PRESETS.employment_vs_standard;
     const docB = compPreset.docB;
 
@@ -641,7 +801,7 @@ function runContractComparison() {
     if (!tbody) return;
 
     tbody.innerHTML = '';
-
+    const fragment = document.createDocumentFragment();
     const diffs = compPreset.diffHighlights;
 
     diffs.forEach(diff => {
@@ -655,8 +815,10 @@ function runContractComparison() {
                 <span class="risk-badge ${diff.severity}">${diff.severity.toUpperCase()} IMPACT</span>
             </td>
         `;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
     });
+
+    tbody.appendChild(fragment);
 }
 
 // AI Chat Assistant System
@@ -681,17 +843,19 @@ async function submitChatMessage() {
 
     appendChatMessage('user', userText);
     const aiBubble = appendChatMessage('ai', 'Analyzing document context...', true);
+    const apiKey = appStateStore.get('apiKey');
+    const currentDoc = appStateStore.get('currentDoc');
 
-    if (appState.apiKey) {
+    if (apiKey) {
         try {
             const prompt = `System: You are LegalEase AI assistant. Answer the user's question based strictly on the provided legal document context. Keep your response concise, actionable, and cite specific clause names if applicable.
 
 Document Context:
-${appState.currentDoc ? appState.currentDoc.text.slice(0, 3000) : ''}
+${currentDoc ? currentDoc.text.slice(0, 3000) : ''}
 
 User Question: ${userText}`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${appState.apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -735,7 +899,6 @@ function appendChatMessage(role, text) {
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${role}`;
-
     const icon = role === 'user' ? 'fa-user' : 'fa-scale-balanced';
 
     bubble.innerHTML = `
@@ -784,6 +947,8 @@ function generateChecklist(doc) {
         `Confirm severance terms in Section 6.3 with payroll guidelines.`
     ];
 
+    const fragment = document.createDocumentFragment();
+
     items.forEach((itemText) => {
         const item = document.createElement('div');
         item.className = 'check-item';
@@ -810,8 +975,10 @@ function generateChecklist(doc) {
             <input type="checkbox" class="check-checkbox" onclick="event.stopPropagation()" aria-label="${sanitizeHtml(itemText)}">
             <span class="check-label">${sanitizeHtml(itemText)}</span>
         `;
-        container.appendChild(item);
+        fragment.appendChild(item);
     });
+
+    container.appendChild(fragment);
 }
 
 // Lawyer Consultation Prep Briefing Updates
@@ -823,6 +990,7 @@ function updateConsultationPrep(doc) {
     const redFlagsList = domCache.prepRedFlagsList || document.getElementById('prepRedFlagsList');
     if (!redFlagsList) return;
     redFlagsList.innerHTML = '';
+    const fragment = document.createDocumentFragment();
 
     (doc.clauses || []).forEach(clause => {
         if (clause.riskLevel === 'high' || clause.riskLevel === 'caution') {
@@ -835,9 +1003,11 @@ function updateConsultationPrep(doc) {
                     <div style="font-size: 0.82rem; color: #64748B;"><em>Reason: ${sanitizeHtml(clause.riskReason)}</em></div>
                 </div>
             `;
-            redFlagsList.appendChild(li);
+            fragment.appendChild(li);
         }
     });
+
+    redFlagsList.appendChild(fragment);
 }
 
 // Export Functions (PDF, Markdown, JSON)
@@ -849,7 +1019,7 @@ function exportConsultationPDF() {
 }
 
 function copyConsultationMarkdown() {
-    const doc = appState.currentDoc || LEGAL_SAMPLES.employment;
+    const doc = appStateStore.get('currentDoc') || LEGAL_SAMPLES.employment;
     const md = `# Legal Consultation Briefing
 Document: ${doc.title}
 Date: ${doc.date || new Date().toLocaleDateString()}
@@ -872,7 +1042,7 @@ ${(doc.clauses || []).map(c => `- **${c.section}**: ${c.plainEnglish}`).join('\n
 }
 
 function exportConsultationJSON() {
-    const doc = appState.currentDoc || LEGAL_SAMPLES.employment;
+    const doc = appStateStore.get('currentDoc') || LEGAL_SAMPLES.employment;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(doc, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
