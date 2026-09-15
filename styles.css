@@ -243,10 +243,10 @@ body {
 /* Main Layout Grid */
 .app-container {
     display: grid;
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: 380px 1fr;
     gap: 1.5rem;
-    padding: 1.5rem 2rem;
-    max-width: 1750px;
+    padding: 1.2rem 2rem 2rem 2rem;
+    max-width: 1800px;
     margin: 0 auto;
     width: 100%;
     flex: 1;
@@ -261,7 +261,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: calc(100vh - 150px);
+    height: calc(100vh - 180px);
+    min-height: 600px;
     position: sticky;
     top: 90px;
 }
@@ -386,34 +387,35 @@ body {
     gap: 1rem;
 }
 
-/* Workspace Navigation Tabs */
+/* Workspace Navigation Tabs Responsive Grid */
 .tabs-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.4rem;
     background: var(--bg-card);
     backdrop-filter: blur(12px);
     border: 1px solid var(--bg-card-border);
     border-radius: var(--radius-lg);
     padding: 0.4rem;
-    overflow-x: auto;
 }
 
 .tab-btn {
-    padding: 0.65rem 1.2rem;
+    padding: 0.65rem 0.5rem;
     border-radius: var(--radius-md);
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--text-muted);
     font-family: var(--font-sans);
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.4rem;
     white-space: nowrap;
+    text-align: center;
 }
 
 .tab-btn:hover {
@@ -1114,12 +1116,17 @@ body {
 }
 
 /* Responsive Layout */
+@media (max-width: 1400px) {
+    .tabs-header {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
 @media (max-width: 1024px) {
     .app-container {
         grid-template-columns: 1fr;
     }
     .document-pane {
-        height: 400px;
+        height: 450px;
         position: relative;
         top: 0;
     }
@@ -1127,17 +1134,21 @@ body {
         grid-template-columns: 1fr;
     }
 }
+@media (max-width: 768px) {
+    .tabs-header {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 
 /* Hackathon Problem Statement Use Case Bar */
 .usecase-bar {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.6rem 2rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.65rem 2rem;
     background: rgba(15, 23, 42, 0.95);
     border-bottom: 1px solid rgba(245, 158, 11, 0.2);
-    overflow-x: auto;
-    white-space: nowrap;
     font-size: 0.82rem;
 }
 .usecase-label {
