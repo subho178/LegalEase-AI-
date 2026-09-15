@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Environment / Keys
+.env
+.env.local

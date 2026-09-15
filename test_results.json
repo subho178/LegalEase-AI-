@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-09-15T15:54:56.581Z",
+  "totalTests": 7,
+  "passed": 7,
+  "failed": 0,
+  "categories": {
+    "security": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "XSS Input Sanitization Shield",
+          "passed": true,
+          "details": "Escaped \"<script>alert('hack')</script>\" -> \"&lt;script&gt;alert(&#039;hack&#039;)&lt;/script&gt;\""
+        },
+        {
+          "name": "Server Directory Traversal Shield",
+          "passed": true,
+          "details": "Blocked malicious paths (../../etc/passwd, ..\\..\\windows\\system32) while allowing safe path (styles.css)"
+        }
+      ]
+    },
+    "parsing": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Sample Legal Contract Presets Loadability",
+          "passed": true,
+          "details": "Validated 5 realistic legal contract datasets in samples.js"
+        },
+        {
+          "name": "Custom Document Section Extractor",
+          "passed": true,
+          "details": "Successfully extracted 2 sections from raw text"
+        }
+      ]
+    },
+    "riskScoring": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Risk Index Score Classification",
+          "passed": true,
+          "details": "Scored sample index scores [78, 28, 84, 62, 15] into valid categories"
+        }
+      ]
+    },
+    "qaEngine": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Grounded Legal Q&A Citation Matching",
+          "passed": true,
+          "details": "Matched questions to clause citations (Section 5.1, Section 3.2)"
+        }
+      ]
+    },
+    "accessibility": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "ARIA Roles & Keyboard Navigation Audit",
+          "passed": true,
+          "details": "Verified role=\"tab\", role=\"tabpanel\", aria-selected, aria-live, role=\"main\", skip-link"
+        }
+      ]
+    }
+  }
+}
