@@ -12,6 +12,13 @@
     <link rel="stylesheet" href="styles.css">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js Library for Client-Side PDF Text Extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
 </head>
 <body>
 
@@ -64,7 +71,7 @@
                 <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="triggerFileSelect()" aria-label="Upload custom legal document file">
                     <i class="fa-upload" aria-hidden="true"></i> Upload
                 </button>
-                <input type="file" id="fileInput" hidden accept=".txt,.md,.doc,.docx" onchange="handleFileUpload(event)">
+                <input type="file" id="fileInput" hidden accept=".pdf,.txt,.md,.doc,.docx,application/pdf" onchange="handleFileUpload(event)">
             </div>
 
             <div class="preset-selector-wrapper">

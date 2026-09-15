@@ -7,3 +7,7 @@ node_modules/
 # Environment / Keys
 .env
 .env.local
+
+# Demo screenshots
+demo_screenshots/
+

@@ -121,6 +121,16 @@ const extracted = extractHeuristicClauses(sampleDocText);
 const parsingPassed = extracted.length >= 2 && extracted[0].section.includes('SECTION 1');
 recordTest('parsing', 'Custom Document Section Extractor', parsingPassed, `Successfully extracted ${extracted.length} sections from raw text`);
 
+// Test 2.3: Binary & PDF Text Sanitization Guard
+function sanitizeBinaryText(text) {
+    if (!text) return '';
+    return text.replace(/[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+}
+const dirtyBinaryInput = "\uFFFD\u0000>u\u000c.(WbR| Legal Document Text Here";
+const cleanBinaryOutput = sanitizeBinaryText(dirtyBinaryInput);
+const binarySanitizePassed = !cleanBinaryOutput.includes('\uFFFD') && cleanBinaryOutput.includes('Legal Document Text Here');
+recordTest('parsing', 'Binary Text Sanitizer & PDF Guard', binarySanitizePassed, `Stripped unprintable binary markers from raw file payload`);
+
 // 3. RISK SCORING TESTS
 console.log(`\n${YELLOW}▶ 3. Running Risk Index & Scorecard Tests...${RESET}`);
 

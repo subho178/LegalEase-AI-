@@ -1,0 +1,25 @@
+{
+  "name": "promptwar",
+  "version": "1.0.0",
+  "description": "> **Empowering users to understand, compare, and navigate complex legal documents with artificial intelligence.**",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/subho178/promptwar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/subho178/promptwar/issues"
+  },
+  "homepage": "https://github.com/subho178/promptwar#readme",
+  "dependencies": {
+    "puppeteer": "^25.11.0"
+  }
+}

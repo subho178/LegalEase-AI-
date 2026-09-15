@@ -238,22 +238,102 @@ function handleFileUpload(event) {
     if (file) handleFile(file);
 }
 
-function handleFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const text = e.target.result;
+/**
+ * Clean raw binary text by removing non-printable binary characters
+ * @param {string} text 
+ * @returns {string} Sanitized plain text
+ */
+function sanitizeBinaryText(text) {
+    if (!text) return '';
+    return text.replace(/[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+}
+
+/**
+ * Extract readable text from PDF ArrayBuffer using PDF.js
+ * @param {ArrayBuffer} arrayBuffer 
+ * @returns {Promise<string>} Extracted text string
+ */
+async function parsePdfArrayBuffer(arrayBuffer) {
+    if (!window.pdfjsLib) {
+        throw new Error('PDF.js engine unavailable. Please connect to the internet to load PDF reader dependencies.');
+    }
+
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdfDoc = await loadingTask.promise;
+    let textParts = [];
+
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        
+        let lastY = null;
+        let pageLines = [];
+        let currentLine = [];
+
+        for (const item of textContent.items) {
+            if (typeof item.str !== 'string') continue;
+            const y = item.transform ? item.transform[5] : null;
+
+            if (lastY !== null && y !== null && Math.abs(y - lastY) > 5) {
+                if (currentLine.length > 0) {
+                    pageLines.push(currentLine.join(' '));
+                    currentLine = [];
+                }
+            }
+            if (item.str.trim()) {
+                currentLine.push(item.str);
+            }
+            lastY = y;
+        }
+
+        if (currentLine.length > 0) {
+            pageLines.push(currentLine.join(' '));
+        }
+
+        const pageText = pageLines.join('\n');
+        textParts.push(`--- PAGE ${i} ---\n` + (pageText || '[No readable text on this page]'));
+    }
+
+    return textParts.join('\n\n');
+}
+
+async function handleFile(file) {
+    if (!file) return;
+
+    showToast(`Parsing ${file.name}...`);
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    try {
+        let extractedText = '';
+
+        if (isPdf) {
+            const arrayBuffer = await file.arrayBuffer();
+            extractedText = await parsePdfArrayBuffer(arrayBuffer);
+            if (!extractedText || extractedText.trim().length === 0) {
+                extractedText = `[PDF Document: ${file.name}]\nNo extractable text layers found. This PDF may contain scanned images.`;
+            }
+        } else {
+            const rawText = await file.text();
+            extractedText = sanitizeBinaryText(rawText);
+        }
+
+        const clauses = extractHeuristicClauses(extractedText);
+        const highRiskCount = clauses.filter(c => c.riskLevel === 'high').length;
+        const calculatedRisk = Math.min(95, Math.max(25, 45 + (highRiskCount * 15)));
+
         const customDoc = {
             id: 'custom_' + Date.now(),
             title: file.name,
-            category: 'Uploaded Legal Document',
+            category: isPdf ? 'Uploaded PDF Document' : 'Uploaded Legal Document',
             parties: 'User Uploaded Document',
             date: new Date().toLocaleDateString(),
-            summary: 'Custom uploaded document parsed for AI intelligence analysis.',
-            text: text,
-            clauses: extractHeuristicClauses(text),
-            riskScore: Math.floor(Math.random() * 35) + 50,
-            riskSummary: 'AI analysis generated for uploaded document text.'
+            summary: `Custom document (${file.name}) processed. Extracted ${clauses.length} clauses for analysis.`,
+            text: extractedText,
+            clauses: clauses,
+            riskScore: calculatedRisk,
+            riskSummary: `AI Risk Assessment completed: ${highRiskCount} high-priority clauses flagged.`
         };
+
         appState.currentDoc = customDoc;
         renderDocumentViewer();
         renderAnalysisData(customDoc);
@@ -261,9 +341,11 @@ function handleFile(file) {
         renderOptionsNavigator(customDoc);
         generateChecklist(customDoc);
         updateConsultationPrep(customDoc);
-        showToast(`Loaded ${file.name}`);
-    };
-    reader.readAsText(file);
+        showToast(`Loaded and analyzed ${file.name}`);
+    } catch (err) {
+        console.error('File parsing error:', err);
+        showToast(`Error parsing file: ${err.message || 'Unknown error'}`);
+    }
 }
 
 /**

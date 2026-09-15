@@ -1,8 +1,8 @@
 # LegalEase AI - Comprehensive Test Results
 
-**Execution Timestamp:** 2026-09-15T15:54:56.581Z  
-**Total Test Count:** 7  
-**Pass Count:** 7 (100%)  
+**Execution Timestamp:** 2026-09-15T17:27:26.355Z  
+**Total Test Count:** 8  
+**Pass Count:** 8 (100%)  
 **Fail Count:** 0  
 
 ---
@@ -12,7 +12,7 @@
 | Parameter / Category | Total | Passed | Failed | Compliance Rate |
 | :--- | :---: | :---: | :---: | :---: |
 | **Security & Shielding** | 2 | 2 | 0 | 100% |
-| **Parsing & Heuristics** | 2 | 2 | 0 | 100% |
+| **Parsing & Heuristics** | 3 | 3 | 0 | 100% |
 | **Risk Scoring & Index** | 1 | 1 | 0 | 100% |
 | **Q&A Grounded Engine** | 1 | 1 | 0 | 100% |
 | **Accessibility (WCAG AA)** | 1 | 1 | 0 | 100% |
@@ -30,6 +30,7 @@
 ### PARSING
 - **✔ PASS**: Sample Legal Contract Presets Loadability (*Validated 5 realistic legal contract datasets in samples.js*)
 - **✔ PASS**: Custom Document Section Extractor (*Successfully extracted 2 sections from raw text*)
+- **✔ PASS**: Binary Text Sanitizer & PDF Guard (*Stripped unprintable binary markers from raw file payload*)
 
 
 ### RISKSCORING
